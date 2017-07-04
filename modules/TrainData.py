@@ -87,7 +87,10 @@ class TrainData(object):
         
         self.referenceclass='isB'
         
-        self.truthclasses=['isB','isBB','isLeptonicB','isLeptonicB_C','isC','isUD','isS','isG','isUndefined']
+        self.truthclasses=[
+            'isB', 'isGBB', 'isBB', 'isLeptonicB', 'isLeptonicB_C', 
+            'isC', 'isGCC', 'isCC', 'isUD', 'isS', 'isG', 'isUndefined'
+            ]
         
         self.allbranchestoberead=[]
         
@@ -597,20 +600,25 @@ class TrainData_simpleTruth(TrainData):
         self.reducedtruthclasses=['isB','isBB','isC','isUDSG']
         if tuple_in is not None:
             b = tuple_in['isB'].view(numpy.ndarray)
-            bb = tuple_in['isBB'].view(numpy.ndarray)
             bl = tuple_in['isLeptonicB'].view(numpy.ndarray)
             blc = tuple_in['isLeptonicB_C'].view(numpy.ndarray)
             allb = b+bl+blc
+
+            bb = tuple_in['isBB'].view(numpy.ndarray)
+            gbb = tuple_in['isGBB'].view(numpy.ndarray)
+            allbb = bb+gbb
             
-           
             c = tuple_in['isC'].view(numpy.ndarray)
-           
+            cc = tuple_in['isCC'].view(numpy.ndarray)
+            gcc = tuple_in['isGCC'].view(numpy.ndarray)
+            allc = c+cc+gcc
+
             ud = tuple_in['isUD'].view(numpy.ndarray)
             s = tuple_in['isS'].view(numpy.ndarray)
             uds=ud+s
             g = tuple_in['isG'].view(numpy.ndarray)
             l = g + uds
-            return numpy.vstack((allb,bb,c,l)).transpose()
+            return numpy.vstack((allb,allbb,allc,l)).transpose()
     
     
 class TrainData_leptTruth(TrainData):
@@ -623,8 +631,11 @@ class TrainData_leptTruth(TrainData):
         self.reducedtruthclasses=['isB','isBB','isLeptB','isC','isUDSG']
         if tuple_in is not None:
             b = tuple_in['isB'].view(numpy.ndarray)
+            allb = b
+
             bb = tuple_in['isBB'].view(numpy.ndarray)
-            allb = b+bb
+            gbb = tuple_in['isGBB'].view(numpy.ndarray)
+            allbb = bb+gbb
             
             bl = tuple_in['isLeptonicB'].view(numpy.ndarray)
             blc = tuple_in['isLeptonicB_C'].view(numpy.ndarray)
@@ -639,7 +650,7 @@ class TrainData_leptTruth(TrainData):
             g = tuple_in['isG'].view(numpy.ndarray)
             l = g + uds
             
-            return numpy.vstack((allb,bb,lepb,c,l)).transpose()  
+            return numpy.vstack((allb,allbb,lepb,c,l)).transpose()  
         
         
         
@@ -654,8 +665,11 @@ class TrainData_fullTruth(TrainData):
         self.reducedtruthclasses=['isB','isBB','isLeptB','isC','isUDS','isG']
         if tuple_in is not None:
             b = tuple_in['isB'].view(numpy.ndarray)
+            allb = b
+
             bb = tuple_in['isBB'].view(numpy.ndarray)
-            allb = b+bb
+            gbb = tuple_in['isGBB'].view(numpy.ndarray)
+            allbb = bb+gbb
             
             bl = tuple_in['isLeptonicB'].view(numpy.ndarray)
             blc = tuple_in['isLeptonicB_C'].view(numpy.ndarray)
@@ -668,8 +682,7 @@ class TrainData_fullTruth(TrainData):
             uds=ud+s
             
             g = tuple_in['isG'].view(numpy.ndarray)
-            
-            
+                        
             return numpy.vstack((allb,bb,lepb,c,uds,g)).transpose()    
   
 
@@ -683,12 +696,12 @@ class TrainData_quarkGluon(TrainData):
         
     def reduceTruth(self, tuple_in):
         if tuple_in is not None:
-            b = tuple_in['isB'].view(numpy.ndarray)
-            #bb = tuple_in['isBB'].view(numpy.ndarray) #this should be gluon?
+            #b = tuple_in['isB'].view(numpy.ndarray)
+            #bb = tuple_in['isBB'].view(numpy.ndarray) #this should be gluon?            
+            #bl = tuple_in['isLeptonicB'].view(numpy.ndarray)
+            #blc = tuple_in['isLeptonicB_C'].view(numpy.ndarray)
+            #c = tuple_in['isC'].view(numpy.ndarray)
             
-            bl = tuple_in['isLeptonicB'].view(numpy.ndarray)
-            blc = tuple_in['isLeptonicB_C'].view(numpy.ndarray)
-            c = tuple_in['isC'].view(numpy.ndarray)
             ud = tuple_in['isUD'].view(numpy.ndarray)
             s = tuple_in['isS'].view(numpy.ndarray)
             q = ud+s#+c+blc+bl+b
