@@ -54,8 +54,13 @@ def main(argv=None):
     from TrainData_PT_recur import TrainData_PT_recur, TrainData_QG_simple, TrainData_recurrent_fullTruth
     from TrainData_deepCSV_int import TrainData_deepCSV_int,TrainData_deepCSV_conv
     from TrainData_deepAK8 import TrainData_AK8Jet_init 
+    from TrainData_yuta import TrainData_yuta_qg, TrainData_yuta_3var, TrainData_yuta_8var, TrainData_yuta_9var
     
     class_options = [
+        TrainData_yuta_3var, 
+        TrainData_yuta_8var, 
+        TrainData_yuta_9var,
+        TrainData_yuta_qg,
         TrainData_deepCSV,
         TrainData_deepConvCSV,
         TrainData_deepCMVA,
