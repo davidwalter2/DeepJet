@@ -363,7 +363,7 @@ class DataCollection(object):
     
     def createDataFromRoot(
                     self, dataclass, outputDir, 
-                    redo_meansandweights=True, means_only=False, dir_check=True
+                    redo_meansandweights=True, means_only=False, dir_check=True, isData=False
                     ):
         '''
         Also creates a file list of the output files
@@ -389,6 +389,7 @@ class DataCollection(object):
         self.sampleentries=[]
         import copy
         self.dataclass=copy.deepcopy(dataclass)
+        self.dataclass.isData=isData
         td=self.dataclass
         ##produce weighter from a larger dataset as one file
         
@@ -604,7 +605,7 @@ class DataCollection(object):
     def convertListOfRootFiles(
                     self, inputfile, dataclass, outputDir, 
                     takemeansfrom='', means_only = False,
-                    output_name = 'dataCollection.dc', batch_mode = False):
+                    output_name = 'dataCollection.dc', batch_mode = False, isData=False):
         newmeans=True
         if takemeansfrom:
             self.readFromFile(takemeansfrom)
@@ -612,8 +613,8 @@ class DataCollection(object):
         self.readRootListFromFile(inputfile)
         self.createDataFromRoot(
                     dataclass, outputDir, 
-                    newmeans, means_only = means_only, 
-                    dir_check= not batch_mode
+                    newmeans, means_only = means_only,
+                    dir_check= not batch_mode, isData=isData
                     )
         self.writeToFile(outputDir+'/'+output_name)
         
@@ -695,7 +696,7 @@ class DataCollection(object):
                 self.shuffleseed=0
                 
             def start(self):
-                
+                #print("preload - read ", self.max," times")
                 for i in range(self.max):
                     self.__readNext()
                     time.sleep(1)
@@ -703,6 +704,8 @@ class DataCollection(object):
             
                 
             def __readNext(self):
+                #print("__readNext ", self.nextcounter)
+                #print("number of files ", len(filelist))
                 #make sure this fast function has exited before getLast tries to read the file
                 import copy
                 readfilename=self.filelist[self.filecounter]
@@ -727,9 +730,11 @@ class DataCollection(object):
                                 continue
                             traceback.print_exc(file=sys.stdout)
                             raise d
-                    
-                t=threading.Thread(target=startRead, args=(self.nextcounter,readfilename,self.shuffleseed))    
+                    #print("thread finished")
+
+                t=threading.Thread(target=startRead, args=(self.nextcounter,readfilename,self.shuffleseed))
                 t.start()
+
                 self.shuffleseed+=1
                 if self.shuffleseed>1e5:
                     self.shuffleseed=0
@@ -737,14 +742,17 @@ class DataCollection(object):
                 self.tdopen[self.nextcounter]=True
                 self.filecounter=self.__increment(self.filecounter,self.nfiles)
                 self.nextcounter=self.__increment(self.nextcounter,self.nfiles)
-                
+                #print("__readNext finished")
+
                 
                 
             def __getLast(self):
+                #print("__getLast ", self.lastcounter)
                 self.tdlist[self.lastcounter].readIn_join(wasasync=True,waitforStart=True)
+
                 td=self.tdlist[self.lastcounter]
-                #print('got ',self.lastcounter)
-                
+                #print("got x[0] ",td.x[0])
+
                 self.tdopen[self.lastcounter]=False
                 self.lastcounter=self.__increment(self.lastcounter,self.nfiles)
                 return td
@@ -775,9 +783,13 @@ class DataCollection(object):
             def get(self):
                 
                 td=self.__getLast()
+                #print("got x[0] ",td.x[0])
+                tdreturn = copy.deepcopy(td)    #in the case of only two files td get cleared in the next step, so we have to save it
+
+                #print("last value saved ")
                 self.__readNext()
-                return td
-                
+                return tdreturn
+                #return td
         
         td=(self.dataclass)
         totalbatches=self.getNBatchesPerEpoch()
@@ -808,6 +820,7 @@ class DataCollection(object):
         #print('generator: total batches '+str(totalbatches))
         print('start file buffering...')
         TDReader.start()
+
         #### 
         #
         # make block class for file read with get function that starts the next read automatically
@@ -855,7 +868,8 @@ class DataCollection(object):
                     
                 if td.x[0].shape[0] == 0:
                     print('Found empty (corrupted?) file, skipping')
-                    continue
+                    break
+                    #continue
                 
                 if xstored[0].shape[0] ==0:
                     #print('dc:read direct') #DEBUG

@@ -147,6 +147,8 @@ class TrainData(object):
         
         self.remove=True    
         self.weight=False
+
+        self.isData=False
         
         self.clear()
         
@@ -736,9 +738,9 @@ class TrainData(object):
             print('neither remove nor weight')
             weights=numpy.empty(self.nsamples)
             weights.fill(1.)
-        
-        
-        
+
+
+
         truthtuple =  Tuple[self.truthclasses]
         #print(self.truthclasses)
         alltruth=self.reduceTruth(truthtuple)
@@ -751,7 +753,7 @@ class TrainData(object):
             alltruth=alltruth[notremoves > 0]
        
         newnsamp=x_all.shape[0]
-        #print('reduced content to ', int(float(newnsamp)/float(self.nsamples)*100),'%')
+        print('reduced content to ', int(float(newnsamp)/float(self.nsamples)*100),'%')
         self.nsamples = newnsamp
         
         #print('took in total ', swall.getAndReset(),' seconds for conversion')
@@ -798,6 +800,7 @@ class TrainData_Flavour(TrainData):
         
     
     def readFromRootFile(self,filename,TupleMeanStd, weighter):
+        print("here i am")
         
         weights,x_all,alltruth, _ =self.getFlavourClassificationData(filename,TupleMeanStd, weighter)
         

@@ -57,6 +57,7 @@ def main(argv=None):
     from TrainData_deepCSV_int import TrainData_deepCSV_int,TrainData_deepCSV_conv
     from TrainData_deepAK8 import TrainData_AK8Jet_init 
     from TrainData_domainAda import TrainData_sampleCheck
+    from TrainData_domainAdaption import TrainData_deepCSV_raw
     
     class_options = [
         TrainData_test,
@@ -92,6 +93,7 @@ def main(argv=None):
         TrainData_deepFlavour_cleanBTVOnly,
 			  TrainData_deepFlavour_nopuppi,
 				TrainData_sampleCheck,
+        TrainData_deepCSV_raw,
         ]
     class_options = dict((str(i).split("'")[1].split('.')[-1], i) for i in class_options)
 
@@ -108,6 +110,7 @@ def main(argv=None):
     parser.add_argument("--batch", help='Provide a batch ID to be used')
     parser.add_argument("-v", action='store_true', help='verbose')
     parser.add_argument("-q", action='store_true', help='quiet')
+    parser.add_argument("--isRealData", default=False)
     
     # process options
     args=parser.parse_args()
@@ -157,13 +160,13 @@ def main(argv=None):
     elif args.means:
         dc.convertListOfRootFiles(
             infile, traind(), outPath, 
-            means_only=True, output_name='batch_template.dc'
+            means_only=True, output_name='batch_template.dc', isData=args.isRealData
             )
     else:
         dc.convertListOfRootFiles(
             infile, traind(), outPath, 
             usemeansfrom, output_name = args.batch if args.batch else 'dataCollection.dc',
-            batch_mode = bool(args.batch)
+            batch_mode = bool(args.batch), isData=args.isRealData
             )
     
 
