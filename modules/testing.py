@@ -420,6 +420,7 @@ def plotLoss(infilename,outfilename,range):
         
     
     import matplotlib.pyplot as plt
+    plt.cla()
     f = plt.figure()
     plt.plot(epochs,trainloss,'r',label='train')
     plt.plot(epochs,valloss,'b',label='val')
@@ -431,8 +432,80 @@ def plotLoss(infilename,outfilename,range):
     elif automax>0:
         plt.ylim([automin*0.9,automax])
     f.savefig(outfilename)
-    
-######### old part - keep for reference, might be useful some day 
+
+def plotLossAndLearn(infilename_loss, infilename_learn, outfilename, range):
+    import matplotlib
+
+    matplotlib.use('Agg')
+
+    infile = open(infilename_loss, 'r')
+    trainloss = []
+    valloss = []
+    epochs = []
+    i = 0
+    automax = 0
+    automin = 100
+    for line in infile:
+        if len(line) < 1: continue
+        tl = float(line.split(' ')[0])
+        vl = float(line.split(' ')[1])
+        trainloss.append(tl)
+        valloss.append(vl)
+        epochs.append(i)
+        i = i + 1
+        if i == 5:
+            automax = max(tl, vl)
+        automin = min(automin, vl, tl)
+
+    infile.close()
+    learn = []
+    infile = open(infilename_learn, 'r')
+    for line in infile:
+        if len(line) < 1: continue
+        learn.append(float(line))
+    infile.close()
+
+    import matplotlib.pyplot as plt
+    import matplotlib.ticker as mtick
+    plt.cla()
+    f, ax1 = plt.subplots()
+
+    color = 'gray'
+    ax2 = ax1.twinx()
+    ax2.set_ylabel('learningrate', color=color)
+    ax2.plot(epochs, learn,color=color,linestyle='dashed')
+    ax2.tick_params(axis='y', labelcolor=color)
+
+    ax1.set_xlabel('epoch')
+    ax1.set_ylabel('loss')
+    ax1.plot(epochs, trainloss, 'r', label='train')
+    ax1.plot(epochs, valloss, 'b', label='val')
+
+    ax1.legend()
+    if len(range) == 2:
+        ax1.set_ylim(range)
+    elif automax > 0:
+        ax1.set_ylim([automin * 0.9, automax])
+
+    plt.subplots_adjust(right=0.9)
+    plt.ticklabel_format(style='sci', axis='y', scilimits=(0, 0))
+    f.savefig(outfilename)
+
+
+
+def plotOutput(array_output,outputdir):
+    import matplotlib.pyplot as plt
+    import numpy as np
+    bins = np.arange(0, 1.05, 0.05)
+    for i in range(array_output.shape[1]):
+        plt.cla()
+        plt.hist(array_output[:,i],bins,histtype='step')
+        plt.xlabel('pred_' + str(i))
+        plt.ylabel('frequency')
+        plt.savefig(outputdir +"/output_"+ str(i) + '.pdf')
+
+
+######### old part - keep for reference, might be useful some day
 
 #just a collection of what will be helpful
 

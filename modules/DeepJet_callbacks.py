@@ -47,12 +47,16 @@ class newline_callbacks_begin(Callback):
             out.write(json.dumps(self.full_logs))
             
         if self.plotLoss:
-            from testing import plotLoss
-            plotLoss(self.outputDir+'/losses.log',self.outputDir+'/losses.pdf',[])
+            from testing import plotLossAndLearn
+            plotLossAndLearn(self.outputDir+'/losses.log',self.outputDir+'/learn.log',self.outputDir+'/losses.pdf',[])
         
 class newline_callbacks_end(Callback):
     def on_epoch_end(self,epoch, epoch_logs={}):
         print('\n***callbacks end***\n')
+
+class newline_callbacks_batchloss(Callback):
+    def on_batch_end(self,batch,batch_logs={}):
+        print('\n loss ... '+str(batch_logs.get('loss')))
         
         
 class Losstimer(Callback):
@@ -94,7 +98,61 @@ class saveCheckPointDeepJet(Callback):
         self.djmodel=model
     def on_epoch_end(self,epoch, epoch_logs={}):
         self.djmodel.save(self.outputDir+"/KERAS_check_model_last.h5")
-        
+
+
+class outputDistribution(Callback):
+    def __init__(self, generator, steps, outputDir):
+        self.generator = generator
+        self.steps = steps
+        self.outputDir=outputDir
+
+
+
+    def on_train_end(self, epoch, epoch_logs={}):
+
+        y_pred = self.model.predict_generator(self.generator, steps=self.steps)
+        from testing import plotOutput
+        plotOutput(y_pred,self.outputDir)
+
+class trainAdversarial(Callback):
+    def __init__(self, model, x, y, w, start=0, step = 2, batch_size=500000, epochs = 1,loss_weights = [1.,1.]):
+        self.model = model
+        self.x = x
+        self.y = y
+        self.w = w
+
+        self.start = start
+        self.step = step
+        self.batch_size = batch_size
+        self.epochs = epochs
+
+        self.loss_weight_flavour = loss_weights[0]
+        self.loss_weight_domain = loss_weights[1]
+
+        self.epoch_number = 0
+
+    def on_epoch_begin(self,epoch, epoch_logs={}):
+        self.epoch_number = epoch
+
+    def on_batch_end(self,batch, batch_logs={}):
+        import numpy as np
+        if self.epoch_number >= self.start and batch%self.step == 0:
+            print("train adversarial")
+
+
+            K.set_value(self.loss_weight_flavour, 0.)
+            K.set_value(self.loss_weight_domain, 1.)
+
+            self.model.fit(x=self.x,
+                           y=self.y,
+                           sample_weight =[np.ones(len(self.w)),np.squeeze(self.w)],
+                           batch_size=self.batch_size,
+                           epochs=self.epochs,
+                           )
+
+            K.set_value(self.loss_weight_flavour, 1.)
+            K.set_value(self.loss_weight_domain, 0.)
+
         
 class DeepJet_callbacks(object):
     def __init__(self,
@@ -109,9 +167,12 @@ class DeepJet_callbacks(object):
                  minTokenLifetime=5,
                  checkperiod=10,
                  plotLossEachEpoch=True):
-        
 
-        
+
+        #self.pred=outputDistribution(generator,generatorsteps,outputDir)
+
+        self.nl_batchloss=newline_callbacks_batchloss()
+
         self.nl_begin=newline_callbacks_begin(outputDir,plotLossEachEpoch)
         self.nl_end=newline_callbacks_end()
         
@@ -125,9 +186,9 @@ class DeepJet_callbacks(object):
 
         self.modelbestcheck=ModelCheckpoint(outputDir+"/KERAS_check_best_model.h5", 
                                         monitor='val_loss', verbose=1, 
-                                        save_best_only=True, save_weights_only=False)
+                                        save_best_only=True, save_weights_only=True)
         
-        self.modelcheckperiod=ModelCheckpoint(outputDir+"/KERAS_check_model_epoch{epoch:02d}.h5", verbose=1,period=checkperiod, save_weights_only=False)
+        self.modelcheckperiod=ModelCheckpoint(outputDir+"/KERAS_check_model_epoch{epoch:02d}.h5", verbose=1,period=checkperiod, save_weights_only=True)
         
         self.modelcheck=saveCheckPointDeepJet(outputDir,model)
         
@@ -140,7 +201,10 @@ class DeepJet_callbacks(object):
   
         self.callbacks=[
             self.nl_begin, self.tokencheck,
-            self.modelbestcheck, self.modelcheck,self.modelcheckperiod,
+            self.modelbestcheck,
+            #self.modelcheck,
+            self.modelcheckperiod,
             self.reduce_lr, self.stopping, self.nl_end, self.history,
-            self.timer
+            self.timer,
+            #self.nl_batchloss
         ]

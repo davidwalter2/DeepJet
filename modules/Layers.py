@@ -2,6 +2,9 @@ import tensorflow as tf
 from keras.engine import Layer
 import keras.backend as K
 
+global_layer_list={}
+
+
 def reverse_gradient(X, hp_lambda):
     '''Flips the sign of the incoming gradient during training.'''
     try:
@@ -39,3 +42,5 @@ class GradientReversal(Layer):
         config = {}
         base_config = super(GradientReversal, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
+
+global_layer_list['GradientReversal']=GradientReversal
